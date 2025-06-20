@@ -10,10 +10,17 @@ def embed_images(images, model, device):
     :model: model do przekształcania obrazów
     :device: urządzenie, na którym wykonywane są obliczenia (CPU lub GPU)
     """ 
+    print(device)
     model.eval()
-    with torch.no_grad():
-        images = images.to(device)
-        latents = model(images).cpu().numpy()
+    batch_size = 32
+    images = [images[i:i + batch_size] for i in range(0, len(images), batch_size)]
+    latents = []
+    for batch in images:
+        batch = batch.to(device)
+        with torch.no_grad():
+            latent_batch = model(batch).cpu().numpy()
+            latents.append(latent_batch)
+    latents = np.concatenate(latents, axis=0)
     return latents
 
 
@@ -56,6 +63,8 @@ def calculate_FID(real_images, fake_images, device):
     model.to(device)
     real_images = embed_images(real_images, model, device)
     fake_images = embed_images(fake_images, model, device)
+
+    print("created embeddings for real and fake images")
 
     mu_real, sigma_real = fit_n_dimensional_gaussian(real_images)
     mu_fake, sigma_fake = fit_n_dimensional_gaussian(fake_images)

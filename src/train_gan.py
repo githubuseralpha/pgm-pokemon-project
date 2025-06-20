@@ -42,9 +42,16 @@ def load_config(config_path):
 
 def evaluate_model(netG, fixed_noise, dataset, device):
     netG.eval()
-    with torch.no_grad():
-        fake_images = netG(fixed_noise).detach().cpu()
-    
+    batch_size = 32
+    batches = [fixed_noise[i:i + batch_size] for i in range(0, len(fixed_noise), batch_size)]
+    fake_images = []
+    for batch in batches:
+        with torch.no_grad():
+            fake_batch = netG(batch.to(device)).detach().cpu()
+            fake_images.append(fake_batch)
+    fake_images = torch.cat(fake_images, dim=0)
+
+    print(f"Generated {fake_images.shape[0]} fake images.")
     # Calculate FID
     real_images = [sample for sample in dataset]
     real_images = torch.stack(real_images).to(device)
