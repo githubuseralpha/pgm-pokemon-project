@@ -12,6 +12,7 @@ import yaml
 
 from dataset import PokemonDataset, train_val_test_split
 from gan_models import Generator, Discriminator, weights_init
+from metrics import calculate_FID, originality_score
 
 manualSeed = 999
 
@@ -37,6 +38,22 @@ def load_config(config_path):
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
     return config
+
+
+def evaluate_model(netG, fixed_noise, dataset, device):
+    netG.eval()
+    with torch.no_grad():
+        fake_images = netG(fixed_noise).detach().cpu()
+    
+    # Calculate FID
+    real_images = [sample for sample in dataset]
+    real_images = torch.stack(real_images).to(device)
+    fid_score = calculate_FID(real_images, fake_images, device)
+    originality_score_ = originality_score(real_images, fake_images[:200], device)
+    print(f"FID Score: {fid_score}, Originality Score: {originality_score_}")
+    wandb.log({"FID Score": fid_score, "Originality Score": originality_score_})
+    
+    return fid_score
 
 
 def train_epoch(    
@@ -154,14 +171,14 @@ def train(
     D_losses = []
     iters = 0
 
-    train, val, test = train_val_test_split(dataroot)
     transforms_ = transforms.Compose([
         transforms.Resize(image_size),
         transforms.CenterCrop(image_size),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-    train_dataset = PokemonDataset(dataroot, train, transform=transforms_)
+    subdirs = [d for d in os.listdir(dataroot) if os.path.isdir(os.path.join(dataroot, d))]
+    train_dataset = PokemonDataset(dataroot, subdirs, transform=transforms_)
     dataloader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -208,6 +225,9 @@ def train(
         if not os.path.exists("output"):
             os.makedirs("output")
         vutils.save_image(fake, f"output/fake_samples_epoch_{epoch}.png", normalize=True)
+        noise = torch.randn(len(train_dataset), nz, 1, 1, device=device)
+        if (epoch + 1) % 5 == 0:
+            evaluate_model(netG, noise, train_dataset, device)
     print("Training complete.")
 
 
