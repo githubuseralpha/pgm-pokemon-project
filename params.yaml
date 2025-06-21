@@ -7,7 +7,7 @@ gan:
   nz: 100  # Size of z latent vector
   ngf: 128  # Size of feature maps in generator
   ndf: 64  # Size of feature maps in discriminator
-  num_epochs: 1
+  num_epochs: 5
   lr: 0.0002
   beta1: 0.5
   
@@ -52,6 +52,10 @@ diffusion:
 data:
   target_folder: "data/images"
   image_size: 128
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  seed: 42
   
 evaluation:
   sample_size: 1000

@@ -51,8 +51,8 @@ def calculate_FID(real_images, fake_images, device, use_timm=True):
     """
     inception_net = InceptionV3(normalize_input=False).to(device)
 
-    real_images = embed_images(real_images[:1000], inception_net, device)
-    fake_images = embed_images(fake_images[:1000], inception_net, device)
+    real_images = embed_images(real_images, inception_net, device, fid_sample_size=250)
+    fake_images = embed_images(fake_images, inception_net, device, fid_sample_size=250)
 
     print("Created embeddings for real and fake images")
 
@@ -63,7 +63,7 @@ def calculate_FID(real_images, fake_images, device, use_timm=True):
     return fid.item() if isinstance(fid, np.ndarray) else fid
 
 
-def calculate_fid_diffusion(model, sampler, image_ds, timesteps, device, fid_sample_size=1000, batch_size=250):
+def calculate_fid_diffusion(model, sampler, image_ds, timesteps, device, fid_sample_size=250, batch_size=250):
     """
     Calculate FID score for diffusion models
     

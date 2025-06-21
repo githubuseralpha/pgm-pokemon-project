@@ -1,30 +1,45 @@
 schema: '2.0'
 stages:
   prepare_data:
-    cmd: python src/dataset.py --prepare
+    cmd: python src/dataset.py --prepare --target-folder data/images --seed 42
     deps:
     - path: src/dataset.py
       hash: md5
-      md5: 483b497d78d9db37994c8f1d68ade4df
-      size: 3044
+      md5: 4c25246177058b2bacb0f2d5ced60da0
+      size: 6823
     outs:
-    - path: data/images
+    - path: data/images/test
       hash: md5
-      md5: 777ebe4a90f8e19c48440716328700fb.dir
-      size: 60956576
-      nfiles: 2503
+      md5: 057c8c400e565ea232e27294202c9373.dir
+      size: 6226864
+      nfiles: 251
+    - path: data/images/train
+      hash: md5
+      md5: 21f412e86b5ca4bddd29b216bf600a0e.dir
+      size: 48486750
+      nfiles: 2002
+    - path: data/images/val
+      hash: md5
+      md5: 235eb2ab2d9f65da1cf479413c030b57.dir
+      size: 6242962
+      nfiles: 250
   train_gan:
     cmd: python src/train_gan.py --dataroot data/images --config params.yaml
     deps:
-    - path: data/images
+    - path: data/images/train
       hash: md5
-      md5: 777ebe4a90f8e19c48440716328700fb.dir
-      size: 60956576
-      nfiles: 2503
+      md5: 21f412e86b5ca4bddd29b216bf600a0e.dir
+      size: 48486750
+      nfiles: 2002
+    - path: data/images/val
+      hash: md5
+      md5: 235eb2ab2d9f65da1cf479413c030b57.dir
+      size: 6242962
+      nfiles: 250
     - path: params.yaml
       hash: md5
-      md5: b78d0a9cdd1f4fd8c2bf6276f7437ed3
-      size: 1188
+      md5: f655ffbe03d9075eb6580a17a9903605
+      size: 1255
     - path: src/gan_dataset.py
       hash: md5
       md5: bc07ee8352c6ab44a9dbbae91a16cc77
@@ -35,12 +50,12 @@ stages:
       size: 2939
     - path: src/train_gan.py
       hash: md5
-      md5: 8b75ecb5e671569fa4a808c05b258386
-      size: 9546
+      md5: e9433b9fb943f87516695c65d292e746
+      size: 10265
     - path: src/unified_metrics.py
       hash: md5
-      md5: 7dcba56ca7eb192805c914b80bf91c41
-      size: 7288
+      md5: 7c5b7e7bc6bb9b8c793a25e2cf6ad5db
+      size: 7294
     params:
       params.yaml:
         gan:
@@ -51,7 +66,7 @@ stages:
           nz: 100
           ngf: 128
           ndf: 64
-          num_epochs: 1
+          num_epochs: 5
           lr: 0.0002
           beta1: 0.5
           wandb_project: pokemon-gan
@@ -60,15 +75,15 @@ stages:
     outs:
     - path: metrics/gan_metrics.json
       hash: md5
-      md5: c41c5141811bd0087bfc26b9cbe34f65
-      size: 169
+      md5: f349134f1b377a25f752d1d7e3cfe16f
+      size: 168
     - path: models/gan_discriminator.pth
       hash: md5
-      md5: f44198af34a5c8c1ead5e590d20a6778
+      md5: c523107afdbf32d2f99ea2cbfe053981
       size: 11204276
     - path: models/gan_generator.pth
       hash: md5
-      md5: e4b21244126152808c832487e06df6f9
+      md5: 0679274286e565a64c4944beb58f21f6
       size: 51710155
   train_diffusion:
     cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml
@@ -80,24 +95,24 @@ stages:
       nfiles: 2503
     - path: params.yaml
       hash: md5
-      md5: ecef55f79a2b55f1f4db7dd0a61ba93f
-      size: 1189
+      md5: 5a5d2eaf3f138990b109bd0c41396f5a
+      size: 1255
     - path: src/dataset.py
       hash: md5
-      md5: 483b497d78d9db37994c8f1d68ade4df
-      size: 3044
+      md5: 4c25246177058b2bacb0f2d5ced60da0
+      size: 6823
     - path: src/diff_models.py
       hash: md5
       md5: 0101b88a59ea2b49f3e9bba570f9877c
       size: 18695
     - path: src/train_diff_models.py
       hash: md5
-      md5: 0107f4753142d155034b047926d74107
-      size: 7390
+      md5: 99db548ed6024ea463bd15e6d5b65036
+      size: 8843
     - path: src/unified_metrics.py
       hash: md5
-      md5: d558595877c08a9f46dd011970f91d94
-      size: 8229
+      md5: 9e4947cecd4766ea205957c80b6b38e3
+      size: 7267
     - path: src/visuals.py
       hash: md5
       md5: 4add5c77cce8528267b2e976cf5972a3
@@ -132,15 +147,15 @@ stages:
     outs:
     - path: checkpoints_diffusion/
       hash: md5
-      md5: fa4cacac4efa36c62f24fa0354987989.dir
+      md5: ab41c86c3c8188bd43e5aeec10e3e41e.dir
       size: 960316886
       nfiles: 1
     - path: metrics/diffusion_metrics.json
       hash: md5
-      md5: 4f9646ed44137b2bb5eaaf93a07caef6
+      md5: d873d84ba41ef004a3564c398e52d8df
       size: 196
     - path: output_diffusion/
       hash: md5
-      md5: 506c564a924afc68a22fef9cc70d60c9.dir
-      size: 11058122
+      md5: af71c3d720412b8e0c3a3c7e59d5d7bc.dir
+      size: 11035252
       nfiles: 98

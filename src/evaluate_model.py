@@ -121,9 +121,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    # Load dataset
+    # Load dataset - use test split for final evaluation
     loader = PokemonDatasetLoader(target_folder="data/images", image_size=128)
-    dataset = loader.get_dataset()
+    test_dataset = loader.get_dataset("test")
     
     # Load models
     print("Loading GAN model...")
@@ -151,11 +151,11 @@ def main():
     print("Calculating metrics...")
     
     # FID scores
-    gan_fid = calculate_FID(gan_generator, dataset, device, nz)
-    ddpm_fid = calculate_fid_diffusion(diff_model, ddpm, dataset, timesteps=30, device=device, 
-                                      fid_sample_size=args.sample_size, batch_size=args.batch_size)
-    ddim_fid = calculate_fid_diffusion(diff_model, ddim, dataset, timesteps=30, device=device,
-                                      fid_sample_size=args.sample_size, batch_size=args.batch_size)
+    gan_fid = calculate_FID(gan_generator, test_dataset, device, nz)
+    ddpm_fid = calculate_fid_diffusion(diff_model, ddpm, test_dataset, timesteps=30, device=device, 
+                                       fid_sample_size=args.sample_size, batch_size=args.batch_size)
+    ddim_fid = calculate_fid_diffusion(diff_model, ddim, test_dataset, timesteps=30, device=device,
+                                       fid_sample_size=args.sample_size, batch_size=args.batch_size)
     
     # CLIP scores
     text_prompt = "Image of a Pokemon character"
@@ -164,7 +164,7 @@ def main():
     ddim_clip = calculate_clip_score(ddim_samples, text_prompt, device)
     
     # Originality scores
-    gan_originality = originality_score(gan_generator, dataset, device, nz)
+    gan_originality = originality_score(gan_generator, test_dataset, device, nz)
     
     # Compile results
     results = {

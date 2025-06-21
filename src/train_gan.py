@@ -189,26 +189,39 @@ def train(
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
     
-    # Use PokemonDatasetLoader instead of the old dataset approach
+    # Use PokemonDatasetLoader with train/val splits
     dataset_loader = PokemonDatasetLoader(target_folder=dataroot, image_size=image_size)
-    # Check if data exists, if not download and prepare it
-    if not os.path.exists(dataroot) or not os.listdir(dataroot):
-        print("Dataset not found, downloading and preparing...")
+    
+    # Check if train split exists, if not download and prepare with splits
+    train_path = os.path.join(dataroot, "train")
+    if not os.path.exists(train_path) or not os.listdir(train_path):
+        print("Train dataset not found, downloading and preparing with splits...")
         dataset_loader.download_and_prepare()
     
-    train_dataset = dataset_loader.get_dataset()
-    dataloader = torch.utils.data.DataLoader(
+    # Get train and validation datasets
+    train_dataset = dataset_loader.get_dataset("train")
+    val_dataset = dataset_loader.get_dataset("val")
+    
+    train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=workers,
         drop_last=True
     )
+    
+    val_dataloader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=workers,
+        drop_last=False
+    )
 
     print("Starting Training Loop...")
     for epoch in range(num_epochs):
         loss_D, loss_G, D_x, D_G_z1, D_G_z2, iters = train_epoch(
-            dataloader,
+            train_dataloader,
             netG,
             netD,
             criterion,
@@ -237,24 +250,32 @@ def train(
             "D_G_z2": D_G_z2
         })
 
-        # save generatde images
+        # save generated images
         with torch.no_grad():
             fake = netG(fixed_noise).detach().cpu()
         if not os.path.exists("output"):
             os.makedirs("output")
         vutils.save_image(fake, f"output/fake_samples_epoch_{epoch}.png", normalize=True)
-        noise = torch.randn(len(train_dataset), nz, 1, 1, device=device)
-        if (epoch + 1) % 50 == 0:
-            evaluate_model(netG, noise, train_dataset, device)
+        
+        # Evaluate on validation set every 10 epochs
+        if (epoch + 1) % 10 == 0:
+            noise_val = torch.randn(len(val_dataset), nz, 1, 1, device=device)
+            val_fid, val_originality = evaluate_model(netG, noise_val, val_dataset, device)
+            print(f"Validation - FID: {val_fid:.4f}, Originality: {val_originality:.4f}")
+            wandb.log({
+                "val_fid": val_fid,
+                "val_originality": val_originality
+            })
+
     
     # Save models
     os.makedirs("models", exist_ok=True)
     torch.save(netG.state_dict(), "models/gan_generator.pth")
     torch.save(netD.state_dict(), "models/gan_discriminator.pth")
     
-    # Calculate final metrics
-    noise = torch.randn(len(train_dataset), nz, 1, 1, device=device)
-    final_fid, final_originality = evaluate_model(netG, noise, train_dataset, device)
+    # Calculate final metrics on validation set
+    noise_val = torch.randn(len(val_dataset), nz, 1, 1, device=device)
+    final_fid, final_originality = evaluate_model(netG, noise_val, val_dataset, device)
     
     # Calculate CLIP score with Pokemon-related text prompt
     print("Calculating CLIP score...")

@@ -51,16 +51,32 @@ def main():
                name=config.get("wandb_run_name", "ddpm-training"),
                config=config)
 
+    # Initialize dataset loader with train/val splits
     loader = PokemonDatasetLoader(target_folder=args.dataroot,
                                   image_size=config.get("image_size", 128))
-    if not os.path.isdir(args.dataroot) or not os.listdir(args.dataroot):
+    
+    # Check if train split exists, if not download and prepare with splits
+    train_path = os.path.join(args.dataroot, "train")
+    if not os.path.exists(train_path) or not os.listdir(train_path):
+        print("Train dataset not found, downloading and preparing with splits...")
         loader.download_and_prepare()
-    dataset = loader.get_dataset()
-    dataloader = DataLoader(dataset,
-                            batch_size=config.get("batch_size", 8),
-                            shuffle=True,
-                            num_workers=config.get("num_workers", 6),
-                            pin_memory=True)
+    
+    # Get train and validation datasets
+    train_dataset = loader.get_dataset("train")
+    val_dataset = loader.get_dataset("val")
+    test_dataset = loader.get_dataset("test")
+    
+    train_dataloader = DataLoader(train_dataset,
+                                  batch_size=config.get("batch_size", 8),
+                                  shuffle=True,
+                                  num_workers=config.get("num_workers", 6),
+                                  pin_memory=True)
+    
+    val_dataloader = DataLoader(val_dataset,
+                                batch_size=config.get("batch_size", 8),
+                                shuffle=False,
+                                num_workers=config.get("num_workers", 6),
+                                pin_memory=True)
 
     model = LargeConvDenoiserNetwork(
         in_channels=3,
@@ -81,29 +97,46 @@ def main():
     save_dir = config.get("checkpoint_dir", "checkpoints_diffusion")
     os.makedirs(save_dir, exist_ok=True)
 
-    # Training Loop
+    # Training Loop with validation
     loss_history = []
+    val_loss_history = []
     best_loss = float('inf')
     for epoch in range(1, config.get("epochs", 50) + 1):
+        # Training phase
         model.train()
-        losses = []
-        for batch in tqdm(dataloader):
+        train_losses = []
+        for batch in tqdm(train_dataloader, desc=f"Training Epoch {epoch}"):
             batch = batch.to(device)
             optimizer.zero_grad()
             loss = diffusion.train_losses(model, batch, DEVICE=device)
             loss.backward()
             optimizer.step()
+            train_losses.append(loss.item())
 
-            losses.append(loss.item())
+        avg_train_loss = sum(train_losses) / len(train_losses)
+        loss_history.append(avg_train_loss)
+        
+        # Validation phase
+        model.eval()
+        val_losses = []
+        with torch.no_grad():
+            for batch in tqdm(val_dataloader, desc=f"Validation Epoch {epoch}"):
+                batch = batch.to(device)
+                val_loss = diffusion.train_losses(model, batch, DEVICE=device)
+                val_losses.append(val_loss.item())
+        
+        avg_val_loss = sum(val_losses) / len(val_losses)
+        val_loss_history.append(avg_val_loss)
 
-        avg_loss = sum(losses) / len(losses)
-        loss_history.append(avg_loss)
+        print(f"Epoch {epoch}/{config.get('epochs')} - Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}")
+        wandb.log({
+            "epoch": epoch, 
+            "train_loss": avg_train_loss,
+            "val_loss": avg_val_loss
+        })
 
-        print(f"Epoch {epoch}/{config.get('epochs')} - Loss: {avg_loss:.6f}")
-        wandb.log({"epoch": epoch, "train_loss": avg_loss})
-
-        if avg_loss < best_loss:
-            best_loss = avg_loss
+        if avg_val_loss < best_loss:
+            best_loss = avg_val_loss
             torch.save(model.state_dict(), os.path.join(save_dir, "best_model.pt"))
         if epoch % config.get("save_interval", 10) == 0:
             torch.save(model.state_dict(), os.path.join(save_dir, f"model_epoch_{epoch}.pt"))
@@ -126,20 +159,20 @@ def main():
     fid_ddpm = calculate_fid_diffusion(
         model=model,
         sampler=diffusion,
-        image_ds=dataset,
+        image_ds=val_dataset,
         timesteps=30,
         device=device,
-        fid_sample_size=1000,
+        fid_sample_size=250,
         batch_size=8
     )
 
     fid_ddim = calculate_fid_diffusion(
         model=model,
         sampler=ddim,
-        image_ds=dataset,
+        image_ds=val_dataset,
         timesteps=30,
         device=device,
-        fid_sample_size=1000,
+        fid_sample_size=250,
         batch_size=8
     )
 

@@ -1,11 +1,13 @@
 stages:
   prepare_data:
-    cmd: python src/dataset.py --prepare
+    cmd: python src/dataset.py --prepare --target-folder data/images --seed 42
     deps:
       - src/dataset.py
     outs:
-      - data/images
-    desc: "Download and prepare Pokemon dataset"
+      - data/images/train
+      - data/images/val
+      - data/images/test
+    desc: "Download and prepare Pokemon dataset with train/val/test splits"
 
   train_gan:
     cmd: python src/train_gan.py --dataroot data/images --config params.yaml
@@ -14,7 +16,8 @@ stages:
       - src/gan_models.py
       - src/gan_dataset.py
       - src/unified_metrics.py
-      - data/images
+      - data/images/train
+      - data/images/val
       - params.yaml
     params:
       - gan
@@ -33,7 +36,8 @@ stages:
       - src/dataset.py
       - src/unified_metrics.py
       - src/visuals.py
-      - data/images
+      - data/images/train
+      - data/images/val
       - params.yaml
     params:
       - diffusion
@@ -50,7 +54,7 @@ stages:
       - src/evaluate_model.py
       - models/gan_generator.pth
       - checkpoints_diffusion/best_model.pt
-      - data/images
+      - data/images/test
       - params.yaml
     metrics:
       - metrics/comparison_metrics.json
