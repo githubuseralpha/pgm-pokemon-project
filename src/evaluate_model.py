@@ -26,7 +26,7 @@ def parse_args():
                         help="Path to trained diffusion model")
     parser.add_argument("--config", type=str, default="params.yaml",
                         help="Path to configuration file")
-    parser.add_argument("--sample-size", type=int, default=1000,
+    parser.add_argument("--sample-size", type=int, default=10,
                         help="Number of samples to generate for evaluation")
     parser.add_argument("--batch-size", type=int, default=8,
                         help="Batch size for evaluation")
@@ -99,19 +99,15 @@ def generate_gan_samples(generator, nz, num_samples, batch_size, device):
 def generate_diffusion_samples(model, sampler, num_samples, batch_size, image_size, device):
     """Generate samples from diffusion model"""
     samples = []
-    num_batches = (num_samples + batch_size - 1) // batch_size
     
     with torch.no_grad():
-        for _ in range(num_batches):
-            current_batch_size = min(batch_size, num_samples - len(samples))
-            noise = torch.randn(current_batch_size, 3, image_size, image_size, device=device)
-            batch_samples, _ = sampler.p_sample_loop(
-                model, noise=noise, return_trajectory=False,
-                clip=True, quiet=True, device=device
-            )
-            samples.append(batch_samples.cpu())
+        noise = torch.randn(num_samples, 3, image_size, image_size, device=device)
+        sample = sampler.p_sample_loop(
+            model, noise=noise, return_trajectory=False,
+            clip=True, quiet=True, device=device
+        )
     
-    return torch.cat(samples, dim=0)[:num_samples]
+    return torch.from_numpy(sample).to(device)[:num_samples]
 
 
 def main():
@@ -135,6 +131,10 @@ def main():
     # Generate samples
     print(f"Generating {args.sample_size} samples from each model...")
     
+    gan_fid_samples = generate_gan_samples(
+        gan_generator, nz, 250, args.batch_size, device
+    )
+
     gan_samples = generate_gan_samples(
         gan_generator, nz, args.sample_size, args.batch_size, device
     )
@@ -151,7 +151,7 @@ def main():
     print("Calculating metrics...")
     
     # FID scores
-    gan_fid = calculate_FID(gan_generator, test_dataset, device, nz)
+    gan_fid = calculate_FID(gan_fid_samples, test_dataset, device, nz)
     ddpm_fid = calculate_fid_diffusion(diff_model, ddpm, test_dataset, timesteps=30, device=device, 
                                        fid_sample_size=args.sample_size, batch_size=args.batch_size)
     ddim_fid = calculate_fid_diffusion(diff_model, ddim, test_dataset, timesteps=30, device=device,

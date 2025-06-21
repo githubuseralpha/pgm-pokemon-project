@@ -281,7 +281,7 @@ def train(
     print("Calculating CLIP score...")
     with torch.no_grad():
         final_fake_images = netG(fixed_noise)
-    final_clip_score = calculate_clip_score(final_fake_images, "a pokemon character", device)
+    final_clip_score = calculate_clip_score(final_fake_images, "Image of a Pokemon character", device)
     print(f"Final CLIP Score: {final_clip_score:.4f}")
     
     # Save metrics

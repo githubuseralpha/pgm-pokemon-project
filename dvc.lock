@@ -50,8 +50,8 @@ stages:
       size: 2939
     - path: src/train_gan.py
       hash: md5
-      md5: e9433b9fb943f87516695c65d292e746
-      size: 10265
+      md5: 92c340611ef72fe31313cbea3be573e4
+      size: 10274
     - path: src/unified_metrics.py
       hash: md5
       md5: 7c5b7e7bc6bb9b8c793a25e2cf6ad5db
@@ -75,27 +75,32 @@ stages:
     outs:
     - path: metrics/gan_metrics.json
       hash: md5
-      md5: f349134f1b377a25f752d1d7e3cfe16f
+      md5: dc8de84db24320bfe59cf843a94ac4d3
       size: 168
     - path: models/gan_discriminator.pth
       hash: md5
-      md5: c523107afdbf32d2f99ea2cbfe053981
+      md5: 85917ca832df21d47b43c04e46673022
       size: 11204276
     - path: models/gan_generator.pth
       hash: md5
-      md5: 0679274286e565a64c4944beb58f21f6
+      md5: fc95aeb37b1a43b3545ec10da2537bdb
       size: 51710155
   train_diffusion:
     cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml
     deps:
-    - path: data/images
+    - path: data/images/train
       hash: md5
-      md5: 777ebe4a90f8e19c48440716328700fb.dir
-      size: 60956576
-      nfiles: 2503
+      md5: 21f412e86b5ca4bddd29b216bf600a0e.dir
+      size: 48486750
+      nfiles: 2002
+    - path: data/images/val
+      hash: md5
+      md5: 235eb2ab2d9f65da1cf479413c030b57.dir
+      size: 6242962
+      nfiles: 250
     - path: params.yaml
       hash: md5
-      md5: 5a5d2eaf3f138990b109bd0c41396f5a
+      md5: f655ffbe03d9075eb6580a17a9903605
       size: 1255
     - path: src/dataset.py
       hash: md5
@@ -107,12 +112,12 @@ stages:
       size: 18695
     - path: src/train_diff_models.py
       hash: md5
-      md5: 99db548ed6024ea463bd15e6d5b65036
-      size: 8843
+      md5: d5fb90eb42b73f369f9330a38825655a
+      size: 8887
     - path: src/unified_metrics.py
       hash: md5
-      md5: 9e4947cecd4766ea205957c80b6b38e3
-      size: 7267
+      md5: 7c5b7e7bc6bb9b8c793a25e2cf6ad5db
+      size: 7294
     - path: src/visuals.py
       hash: md5
       md5: 4add5c77cce8528267b2e976cf5972a3
@@ -147,15 +152,15 @@ stages:
     outs:
     - path: checkpoints_diffusion/
       hash: md5
-      md5: ab41c86c3c8188bd43e5aeec10e3e41e.dir
+      md5: 3e298b17d2f20444d08691d9ac48ae01.dir
       size: 960316886
       nfiles: 1
     - path: metrics/diffusion_metrics.json
       hash: md5
-      md5: d873d84ba41ef004a3564c398e52d8df
-      size: 196
+      md5: 2dc72e6def44bdc750065d106df342f0
+      size: 197
     - path: output_diffusion/
       hash: md5
-      md5: af71c3d720412b8e0c3a3c7e59d5d7bc.dir
-      size: 11035252
+      md5: fd9da9a26562605a610e4e22e5372b1e.dir
+      size: 10879626
       nfiles: 98
