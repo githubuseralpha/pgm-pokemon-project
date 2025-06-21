@@ -1,6 +1,15 @@
+"""
+DEPRECATED: This file has been unified into unified_metrics.py
+Please use unified_metrics.py instead for all metric calculations.
+"""
+
 import torch
 import timm
 import numpy as np
+
+import clip
+import torchvision.transforms as T
+
 
 def embed_images(images, model, device):
     """
@@ -88,3 +97,49 @@ def originality_score(real_images, fake_images, device):
         
     min_distances = np.min(cosine_distances, axis=1)
     return np.mean(min_distances) / 2 # Normalize to [0, 1] range
+
+
+def calculate_clip_score(images_tensor, text_prompt, device):
+    
+    model, _ = clip.load("ViT-B/32", device=device)
+    model.eval()
+
+    # Przetworzenie tekstu
+    text = clip.tokenize([text_prompt]).to(device)
+
+    # Normalizacja
+    transform = T.Compose([
+        T.Resize(224),
+        T.CenterCrop(224),
+        T.Normalize(mean=[-1, -1, -1], std=[2, 2, 2]),  # zamiana z [-1,1] do [0,1]
+        T.Normalize(mean=[0.48145466, 0.4578275, 0.40821073], 
+                    std=[0.26862954, 0.26130258, 0.27577711]),
+    ])
+
+    if isinstance(images_tensor, np.ndarray):
+        images_tensor = torch.from_numpy(images_tensor).to(device)
+
+    images_tensor = images_tensor.to(device)
+    imgs = (images_tensor + 1) / 2
+    imgs = torch.clamp(imgs, 0, 1)
+
+    # Przetwarzanie po batchu
+    processed_imgs = []
+    for img in imgs:
+        processed_imgs.append(transform(img).unsqueeze(0))
+    processed_imgs = torch.cat(processed_imgs, dim=0).to(device)
+
+    # embeddingi
+    with torch.no_grad():
+        image_features = model.encode_image(processed_imgs)
+        text_features = model.encode_text(text)
+
+        # Normalizacja
+        image_features = image_features / image_features.norm(dim=1, keepdim=True)
+        text_features = text_features / text_features.norm(dim=1, keepdim=True)
+
+        # Cosine similarity
+        similarity = (image_features @ text_features.T).squeeze(1)
+
+    clip_score = similarity.mean().item()
+    return clip_score

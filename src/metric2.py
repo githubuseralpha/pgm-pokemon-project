@@ -1,3 +1,8 @@
+"""
+DEPRECATED: This file has been unified into unified_metrics.py
+Please use unified_metrics.py instead for all metric calculations.
+"""
+
 import math
 import torch
 import numpy as np

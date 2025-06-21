@@ -10,9 +10,9 @@ import torchvision.utils as vutils
 import wandb
 import yaml
 
-from gan_dataset import PokemonDataset, train_val_test_split
+from dataset import PokemonDatasetLoader
 from gan_models import Generator, Discriminator, weights_init
-from metrics import calculate_FID, originality_score
+from unified_metrics import calculate_FID, originality_score
 
 manualSeed = 999
 
@@ -28,7 +28,7 @@ wandb.init(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a GAN on Pokemon images")
-    parser.add_argument("--dataroot", type=str, default="/workspace/pgm-pokemon-project/data/images",
+    parser.add_argument("--dataroot", type=str, default="/workspace/pgm-pokemon-project/Data",
                         help="Path to the dataset root directory")
     parser.add_argument("--config", type=str, default="configs/default_gan.yaml", help="Path to the configuration file")
     return parser.parse_args()
@@ -138,7 +138,7 @@ def train_epoch(
 
 
 def train(
-    dataroot = "/workspace/pgm-pokemon-project/data/images",
+    dataroot = "/workspace/pgm-pokemon-project/Data",
     workers = 2,
     batch_size = 128,
     image_size = 128,
@@ -184,8 +184,15 @@ def train(
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-    subdirs = [d for d in os.listdir(dataroot) if os.path.isdir(os.path.join(dataroot, d))]
-    train_dataset = PokemonDataset(dataroot, subdirs, transform=transforms_)
+    
+    # Use PokemonDatasetLoader instead of the old dataset approach
+    dataset_loader = PokemonDatasetLoader(target_folder=dataroot, image_size=image_size)
+    # Check if data exists, if not download and prepare it
+    if not os.path.exists(dataroot) or not os.listdir(dataroot):
+        print("Dataset not found, downloading and preparing...")
+        dataset_loader.download_and_prepare()
+    
+    train_dataset = dataset_loader.get_dataset()
     dataloader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,

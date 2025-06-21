@@ -11,8 +11,8 @@ import torchvision.utils as vutils
 import wandb
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from metrics import calculate_clip_score, calculate_fid
 
+from unified_metrics import calculate_clip_score, calculate_fid_diffusion
 from dataset import PokemonDatasetLoader
 from diff_models import LargeConvDenoiserNetwork, GaussianDiffusion, DeterministicGaussianDiffusion
 from visuals import show_images, plot_image_trajectories
@@ -122,7 +122,7 @@ def main():
             model, noise=fixed_noise, return_trajectory=True,
             clip=True, quiet=False, device=device)
         
-    fid_ddpm = calculate_fid(
+    fid_ddpm = calculate_fid_diffusion(
         model=model,
         sampler=diffusion,
         image_ds=dataset,
@@ -132,7 +132,7 @@ def main():
         batch_size=8
     )
 
-    fid_ddim = calculate_fid(
+    fid_ddim = calculate_fid_diffusion(
         model=model,
         sampler=ddim,
         image_ds=dataset,
