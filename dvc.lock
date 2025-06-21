@@ -23,8 +23,8 @@ stages:
       nfiles: 2503
     - path: params.yaml
       hash: md5
-      md5: ecef55f79a2b55f1f4db7dd0a61ba93f
-      size: 1189
+      md5: b78d0a9cdd1f4fd8c2bf6276f7437ed3
+      size: 1188
     - path: src/gan_dataset.py
       hash: md5
       md5: bc07ee8352c6ab44a9dbbae91a16cc77
@@ -35,12 +35,12 @@ stages:
       size: 2939
     - path: src/train_gan.py
       hash: md5
-      md5: 25cf4fd63d3752df3b3c46610a456de5
-      size: 8943
+      md5: 8b75ecb5e671569fa4a808c05b258386
+      size: 9546
     - path: src/unified_metrics.py
       hash: md5
-      md5: d13790955efc45afab46a17c28ceae14
-      size: 7470
+      md5: 7dcba56ca7eb192805c914b80bf91c41
+      size: 7288
     params:
       params.yaml:
         gan:
@@ -50,8 +50,8 @@ stages:
           nc: 3
           nz: 100
           ngf: 128
-          ndf: 128
-          num_epochs: 5
+          ndf: 64
+          num_epochs: 1
           lr: 0.0002
           beta1: 0.5
           wandb_project: pokemon-gan
@@ -60,15 +60,15 @@ stages:
     outs:
     - path: metrics/gan_metrics.json
       hash: md5
-      md5: 6530b21562bcb97b6eef69400cfeefdb
-      size: 138
+      md5: c41c5141811bd0087bfc26b9cbe34f65
+      size: 169
     - path: models/gan_discriminator.pth
       hash: md5
-      md5: a5d1814de3e9dab442d1628248f0c032
-      size: 44681972
+      md5: f44198af34a5c8c1ead5e590d20a6778
+      size: 11204276
     - path: models/gan_generator.pth
       hash: md5
-      md5: aa8bf7cb3795713bac550d271baa1704
+      md5: e4b21244126152808c832487e06df6f9
       size: 51710155
   train_diffusion:
     cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml

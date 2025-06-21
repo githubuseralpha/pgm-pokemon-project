@@ -10,17 +10,20 @@ import torchvision.utils as vutils
 import wandb
 import yaml
 import json
+import numpy as np
 
 from dataset import PokemonDatasetLoader
 from gan_models import Generator, Discriminator, weights_init
 from unified_metrics import calculate_FID, originality_score, calculate_clip_score
 
-manualSeed = 999
+seed = 42
 
-print("Random Seed: ", manualSeed)
-random.seed(manualSeed)
-torch.manual_seed(manualSeed)
-torch.use_deterministic_algorithms(True)
+print("Random Seed: ", seed)
+random.seed(seed)
+torch.manual_seed(seed)
+np.random.seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 
 wandb.init(
     project="pgm-pokemon-project",
@@ -250,12 +253,13 @@ def train(
     torch.save(netD.state_dict(), "models/gan_discriminator.pth")
     
     # Calculate final metrics
-    final_fid, final_originality = evaluate_model(netG, fixed_noise, train_dataset, device)
+    noise = torch.randn(len(train_dataset), nz, 1, 1, device=device)
+    final_fid, final_originality = evaluate_model(netG, noise, train_dataset, device)
     
     # Calculate CLIP score with Pokemon-related text prompt
     print("Calculating CLIP score...")
     with torch.no_grad():
-        final_fake_images = netG(fixed_noise).detach().cpu()
+        final_fake_images = netG(fixed_noise)
     final_clip_score = calculate_clip_score(final_fake_images, "a pokemon character", device)
     print(f"Final CLIP Score: {final_clip_score:.4f}")
     

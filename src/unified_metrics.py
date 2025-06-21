@@ -10,37 +10,24 @@ import torchvision.transforms as T
 from diff_models import InceptionV3
 
 
-def embed_images(images, model, device):
-    """
-    Function to transform images to latent space using a model
-
-    :images: images to transform
-    :model: model for transforming images
-    :device: device for computations (CPU or GPU)
-    """ 
-    print(f"Embedding images on device: {device}")
-    model.eval()
-    batch_size = 32
-    images = [i for i in images]
-    images = [images[i:i + batch_size] for i in range(0, len(images), batch_size)]
-    latents = []
-    for batch in images:
-        batch = torch.stack(batch, dim=0)
-        batch = batch.to(device)
-        with torch.no_grad():
-            latent_batch = model(batch).cpu().numpy()
-            latents.append(latent_batch)
-    latents = np.concatenate(latents, axis=0)
-    print(f"Latent shape: {latents.shape}")
-    return latents
-
+def embed_images(images, inception_net, device, fid_sample_size=1000, batch_size = 32):
+    iterations = math.ceil(fid_sample_size / batch_size)
+    real_latents = []
+    dl = torch.utils.data.DataLoader(images, batch_size=batch_size, shuffle=False)
+    for x in tqdm(dl, desc="Embedding real data", total=iterations):
+        if len(real_latents) * batch_size >= fid_sample_size:
+            break
+        x = x.to(device)
+        z = inception_net(x)
+        real_latents.append(z)
+    real_latents = torch.cat(real_latents, dim=0)[:fid_sample_size].cpu().detach().numpy()
+    return real_latents
 
 def fit_n_dimensional_gaussian(latents):
     """Fit n-dimensional Gaussian to latent representations"""
     mu = np.mean(latents, axis=0)
     sigma = np.cov(latents, rowvar=False)
     return mu, sigma
-
 
 def wasserstein_distance_sqrtm(mu1, sigma1, mu2, sigma2):
     """

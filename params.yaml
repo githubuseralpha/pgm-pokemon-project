@@ -7,7 +7,7 @@ gan:
   nz: 100  # Size of z latent vector
   ngf: 128  # Size of feature maps in generator
   ndf: 64  # Size of feature maps in discriminator
-  num_epochs: 100
+  num_epochs: 1
   lr: 0.0002
   beta1: 0.5
   
