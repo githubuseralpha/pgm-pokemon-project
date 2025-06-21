@@ -88,4 +88,3 @@ def originality_score(real_images, fake_images, device):
         
     min_distances = np.min(cosine_distances, axis=1)
     return np.mean(min_distances) / 2 # Normalize to [0, 1] range
-    
