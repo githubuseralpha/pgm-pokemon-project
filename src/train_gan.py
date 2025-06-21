@@ -30,7 +30,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train a GAN on Pokemon images")
     parser.add_argument("--dataroot", type=str, default="/workspace/pgm-pokemon-project/Data",
                         help="Path to the dataset root directory")
-    parser.add_argument("--config", type=str, default="configs/default_gan.yaml", help="Path to the configuration file")
+    parser.add_argument("--config", type=str, default="params.yaml", help="Path to the configuration file")
     return parser.parse_args()
 
 
@@ -247,7 +247,7 @@ def train(
 
 def main():
     args = parse_args()
-    config = load_config(args.config)
+    config = load_config(args.config)["gan"]
 
     wandb.config.update(config)
 

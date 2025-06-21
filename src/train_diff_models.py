@@ -21,7 +21,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train DDPM and DDIM models on Pokemon images")
     parser.add_argument("--dataroot", type=str, default="Data",
                         help="Path to the dataset directory containing images")
-    parser.add_argument("--config", type=str, default="configs/default_diffusion.yaml",
+    parser.add_argument("--config", type=str, default="params.yaml",
                         help="Path to the YAML configuration file")
     return parser.parse_args()
 
@@ -32,7 +32,7 @@ def load_config(path):
     
 def main():
     args = parse_args()
-    config = load_config(args.config)
+    config = load_config(args.config)["diffusion"]
 
     seed = config.get("seed", 42)
     print(f"Random Seed: {seed}")
