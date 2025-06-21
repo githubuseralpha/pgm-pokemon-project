@@ -10,7 +10,7 @@ import torchvision.utils as vutils
 import wandb
 import yaml
 
-from dataset import PokemonDataset, train_val_test_split
+from gan_dataset import PokemonDataset, train_val_test_split
 from gan_models import Generator, Discriminator, weights_init
 from metrics import calculate_FID, originality_score
 
