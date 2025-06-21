@@ -1,32 +1,61 @@
 gan:
+  # Training parameters
   workers: 4
   batch_size: 128
   image_size: 128
-  nc: 3
-  nz: 100
-  ngf: 128
-  ndf: 128
-  num_epochs: 500
+  nc: 3  # Number of channels
+  nz: 100  # Size of z latent vector
+  ngf: 128  # Size of feature maps in generator
+  ndf: 64  # Size of feature maps in discriminator
+  num_epochs: 100
   lr: 0.0002
   beta1: 0.5
+  
+  # Wandb
+  wandb_project: "pokemon-gan"
+  wandb_run_name: "gan-training"
+  
+  # Seed for reproducibility
+  seed: 42
 
 diffusion:
-  training:
-    batch_size: 8
-    num_epochs: 100
-    learning_rate: 1e-4
-    num_timesteps: 1000
-    save_every: 10
-    patience: 5
+  # Training parameters
+  batch_size: 8
+  num_workers: 6
+  epochs: 1
+  lr: 0.0001
+  num_timesteps: 1000
+  image_size: 128
+  save_interval: 10
+  sample_batch_size: 48
+  
+  # Model architecture
+  channels: [64, 128, 256, 512, 1024]
+  layers_per_block: 2
+  downblock: "ResnetDownsampleBlock2D"
+  upblock: "ResnetUpsampleBlock2D"
+  add_attention: true
+  attention_head_dim: 64
+  
+  # Directories
+  checkpoint_dir: "checkpoints_diffusion"
+  output_dir: "output_diffusion"
+  
+  # Wandb
+  wandb_project: "pokemon-diffusion"
+  wandb_run_name: "ddpm-training"
+  
+  # Seed for reproducibility
+  seed: 42
 
-  model:
-    in_channels: 3
-    out_channels: 3
-    channels: [64, 128, 256, 512, 1024]
-    layers_per_block: 2
-    downblock: ResnetDownsampleBlock2D
-    upblock: ResnetUpsampleBlock2D
-    add_attention: true
-    attention_head_dim: 64
+# Global settings
+data:
+  target_folder: "data/images"
+  image_size: 128
+  
+evaluation:
+  sample_size: 1000
+  batch_size: 8
+  text_prompt: "Image of a Pokemon character"
 
     

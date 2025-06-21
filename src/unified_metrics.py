@@ -21,14 +21,17 @@ def embed_images(images, model, device):
     print(f"Embedding images on device: {device}")
     model.eval()
     batch_size = 32
+    images = [i for i in images]
     images = [images[i:i + batch_size] for i in range(0, len(images), batch_size)]
     latents = []
     for batch in images:
+        batch = torch.stack(batch, dim=0)
         batch = batch.to(device)
         with torch.no_grad():
             latent_batch = model(batch).cpu().numpy()
             latents.append(latent_batch)
     latents = np.concatenate(latents, axis=0)
+    print(f"Latent shape: {latents.shape}")
     return latents
 
 
@@ -37,33 +40,6 @@ def fit_n_dimensional_gaussian(latents):
     mu = np.mean(latents, axis=0)
     sigma = np.cov(latents, rowvar=False)
     return mu, sigma
-
-
-def wasserstein_distance(mu1, sigma1, mu2, sigma2):
-    """
-    Calculate Wasserstein distance between two Gaussian distributions
-
-    :mu1: mean of first distribution
-    :sigma1: covariance matrix of first distribution
-    :mu2: mean of second distribution
-    :sigma2: covariance matrix of second distribution
-    """
-    diff = mu1 - mu2
-    euclidean_sq = np.dot(diff, diff)
-
-    trace_cov1 = np.trace(sigma1)
-    trace_cov2 = np.trace(sigma2)
-
-    M = sigma1 @ sigma2
-
-    eigvals = np.linalg.eigvals(M)
-    real_eigvals = np.real(eigvals)
-    nonneg_eigvals = np.maximum(real_eigvals, 0)
-
-    trace_sqrt = np.sum(np.sqrt(nonneg_eigvals))
-
-    result = euclidean_sq + trace_cov1 + trace_cov2 - 2 * trace_sqrt
-    return result
 
 
 def wasserstein_distance_sqrtm(mu1, sigma1, mu2, sigma2):
@@ -86,21 +62,17 @@ def calculate_FID(real_images, fake_images, device, use_timm=True):
     :device: computation device
     :use_timm: whether to use timm's inception model (default for GANs)
     """
-    if use_timm:
-        model = timm.create_model('inception_v3', pretrained=True)
-    else:
-        model = InceptionV3(normalize_input=False)
-    
-    model.to(device)
-    real_images = embed_images(real_images, model, device)
-    fake_images = embed_images(fake_images, model, device)
+    inception_net = InceptionV3(normalize_input=False).to(device)
+
+    real_images = embed_images(real_images[:1000], inception_net, device)
+    fake_images = embed_images(fake_images[:1000], inception_net, device)
 
     print("Created embeddings for real and fake images")
 
     mu_real, sigma_real = fit_n_dimensional_gaussian(real_images)
     mu_fake, sigma_fake = fit_n_dimensional_gaussian(fake_images)
 
-    fid = wasserstein_distance(mu_real, sigma_real, mu_fake, sigma_fake)
+    fid = wasserstein_distance_sqrtm(mu_real, sigma_real, mu_fake, sigma_fake)
     return fid.item() if isinstance(fid, np.ndarray) else fid
 
 
@@ -141,7 +113,7 @@ def calculate_fid_diffusion(model, sampler, image_ds, timesteps, device, fid_sam
                 break
             samples = sampler.p_sample_loop(
                 model,
-                noise=torch.randn(batch_size, 3, 32, 32, device=device),
+                noise=torch.randn(batch_size, 3, 128, 128, device=device),
                 num_inference_steps=num_timesteps,
                 return_trajectory=False,
                 clip=True,

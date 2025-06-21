@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+
+# DVC
+.dvc/cache
+.dvc/tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files that should be downloaded fresh
+data/images*
+models/*.pth
+checkpoints_diffusion/*.pt
+output/
+wandb/run-*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log

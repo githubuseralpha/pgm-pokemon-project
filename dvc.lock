@@ -1,0 +1,146 @@
+schema: '2.0'
+stages:
+  prepare_data:
+    cmd: python src/dataset.py --prepare
+    deps:
+    - path: src/dataset.py
+      hash: md5
+      md5: 483b497d78d9db37994c8f1d68ade4df
+      size: 3044
+    outs:
+    - path: data/images
+      hash: md5
+      md5: 777ebe4a90f8e19c48440716328700fb.dir
+      size: 60956576
+      nfiles: 2503
+  train_gan:
+    cmd: python src/train_gan.py --dataroot data/images --config params.yaml
+    deps:
+    - path: data/images
+      hash: md5
+      md5: 777ebe4a90f8e19c48440716328700fb.dir
+      size: 60956576
+      nfiles: 2503
+    - path: params.yaml
+      hash: md5
+      md5: ecef55f79a2b55f1f4db7dd0a61ba93f
+      size: 1189
+    - path: src/gan_dataset.py
+      hash: md5
+      md5: bc07ee8352c6ab44a9dbbae91a16cc77
+      size: 3057
+    - path: src/gan_models.py
+      hash: md5
+      md5: 03488f78ab4bd096edd07faca18b3a6e
+      size: 2939
+    - path: src/train_gan.py
+      hash: md5
+      md5: 25cf4fd63d3752df3b3c46610a456de5
+      size: 8943
+    - path: src/unified_metrics.py
+      hash: md5
+      md5: d13790955efc45afab46a17c28ceae14
+      size: 7470
+    params:
+      params.yaml:
+        gan:
+          workers: 4
+          batch_size: 128
+          image_size: 128
+          nc: 3
+          nz: 100
+          ngf: 128
+          ndf: 128
+          num_epochs: 5
+          lr: 0.0002
+          beta1: 0.5
+          wandb_project: pokemon-gan
+          wandb_run_name: gan-training
+          seed: 42
+    outs:
+    - path: metrics/gan_metrics.json
+      hash: md5
+      md5: 6530b21562bcb97b6eef69400cfeefdb
+      size: 138
+    - path: models/gan_discriminator.pth
+      hash: md5
+      md5: a5d1814de3e9dab442d1628248f0c032
+      size: 44681972
+    - path: models/gan_generator.pth
+      hash: md5
+      md5: aa8bf7cb3795713bac550d271baa1704
+      size: 51710155
+  train_diffusion:
+    cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml
+    deps:
+    - path: data/images
+      hash: md5
+      md5: 777ebe4a90f8e19c48440716328700fb.dir
+      size: 60956576
+      nfiles: 2503
+    - path: params.yaml
+      hash: md5
+      md5: ecef55f79a2b55f1f4db7dd0a61ba93f
+      size: 1189
+    - path: src/dataset.py
+      hash: md5
+      md5: 483b497d78d9db37994c8f1d68ade4df
+      size: 3044
+    - path: src/diff_models.py
+      hash: md5
+      md5: 0101b88a59ea2b49f3e9bba570f9877c
+      size: 18695
+    - path: src/train_diff_models.py
+      hash: md5
+      md5: 0107f4753142d155034b047926d74107
+      size: 7390
+    - path: src/unified_metrics.py
+      hash: md5
+      md5: d558595877c08a9f46dd011970f91d94
+      size: 8229
+    - path: src/visuals.py
+      hash: md5
+      md5: 4add5c77cce8528267b2e976cf5972a3
+      size: 3543
+    params:
+      params.yaml:
+        diffusion:
+          batch_size: 8
+          num_workers: 6
+          epochs: 1
+          lr: 0.0001
+          num_timesteps: 1000
+          image_size: 128
+          save_interval: 10
+          sample_batch_size: 48
+          channels:
+          - 64
+          - 128
+          - 256
+          - 512
+          - 1024
+          layers_per_block: 2
+          downblock: ResnetDownsampleBlock2D
+          upblock: ResnetUpsampleBlock2D
+          add_attention: true
+          attention_head_dim: 64
+          checkpoint_dir: checkpoints_diffusion
+          output_dir: output_diffusion
+          wandb_project: pokemon-diffusion
+          wandb_run_name: ddpm-training
+          seed: 42
+    outs:
+    - path: checkpoints_diffusion/
+      hash: md5
+      md5: fa4cacac4efa36c62f24fa0354987989.dir
+      size: 960316886
+      nfiles: 1
+    - path: metrics/diffusion_metrics.json
+      hash: md5
+      md5: 4f9646ed44137b2bb5eaaf93a07caef6
+      size: 196
+    - path: output_diffusion/
+      hash: md5
+      md5: 506c564a924afc68a22fef9cc70d60c9.dir
+      size: 11058122
+      nfiles: 98

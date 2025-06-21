@@ -60,12 +60,19 @@ class Pokemon_Dataset(Dataset):
         return self.transform(image)
     
 if __name__ == "__main__":
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(current_dir)
-    data_dir = os.path.join(parent_dir, "Data")
-
-    loader = PokemonDatasetLoader(target_folder=data_dir, image_size=128)
-    loader.download_and_prepare()
-
-    dataset = loader.get_dataset()
-    print(f"Dataset prepared with {len(dataset)} images.")
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Prepare Pokemon dataset")
+    parser.add_argument("--prepare", action="store_true", help="Download and prepare dataset")
+    parser.add_argument("--target-folder", type=str, default="data/images", help="Target folder for images")
+    parser.add_argument("--image-size", type=int, default=128, help="Image size")
+    args = parser.parse_args()
+    
+    if args.prepare:
+        loader = PokemonDatasetLoader(target_folder=args.target_folder, image_size=args.image_size)
+        loader.download_and_prepare()
+        
+        dataset = loader.get_dataset()
+        print(f"Dataset prepared with {len(dataset)} images.")
+    else:
+        print("Use --prepare flag to download and prepare the dataset")

@@ -1,0 +1,57 @@
+stages:
+  prepare_data:
+    cmd: python src/dataset.py --prepare
+    deps:
+      - src/dataset.py
+    outs:
+      - data/images
+    desc: "Download and prepare Pokemon dataset"
+
+  train_gan:
+    cmd: python src/train_gan.py --dataroot data/images --config params.yaml
+    deps:
+      - src/train_gan.py
+      - src/gan_models.py
+      - src/gan_dataset.py
+      - src/unified_metrics.py
+      - data/images
+      - params.yaml
+    params:
+      - gan
+    outs:
+      - models/gan_generator.pth
+      - models/gan_discriminator.pth
+    metrics:
+      - metrics/gan_metrics.json
+    desc: "Train GAN model on Pokemon images"
+
+  train_diffusion:
+    cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml
+    deps:
+      - src/train_diff_models.py
+      - src/diff_models.py
+      - src/dataset.py
+      - src/unified_metrics.py
+      - src/visuals.py
+      - data/images
+      - params.yaml
+    params:
+      - diffusion
+    outs:
+      - checkpoints_diffusion/
+      - output_diffusion/
+    metrics:
+      - metrics/diffusion_metrics.json
+    desc: "Train diffusion model (DDPM/DDIM) on Pokemon images"
+
+  evaluate_models:
+    cmd: python src/evaluate_model.py --gan-model models/gan_generator.pth --diffusion-model checkpoints_diffusion/best_model.pt --config params.yaml
+    deps:
+      - src/evaluate_model.py
+      - models/gan_generator.pth
+      - checkpoints_diffusion/best_model.pt
+      - data/images
+      - params.yaml
+    metrics:
+      - metrics/comparison_metrics.json
+    desc: "Evaluate and compare GAN vs Diffusion models"

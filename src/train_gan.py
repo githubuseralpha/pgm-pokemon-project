@@ -9,10 +9,11 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 import wandb
 import yaml
+import json
 
 from dataset import PokemonDatasetLoader
 from gan_models import Generator, Discriminator, weights_init
-from unified_metrics import calculate_FID, originality_score
+from unified_metrics import calculate_FID, originality_score, calculate_clip_score
 
 manualSeed = 999
 
@@ -60,7 +61,7 @@ def evaluate_model(netG, fixed_noise, dataset, device):
     print(f"FID Score: {fid_score}, Originality Score: {originality_score_}")
     wandb.log({"FID Score": fid_score, "Originality Score": originality_score_})
     
-    return fid_score
+    return fid_score, originality_score_
 
 
 def train_epoch(    
@@ -240,9 +241,48 @@ def train(
             os.makedirs("output")
         vutils.save_image(fake, f"output/fake_samples_epoch_{epoch}.png", normalize=True)
         noise = torch.randn(len(train_dataset), nz, 1, 1, device=device)
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 50 == 0:
             evaluate_model(netG, noise, train_dataset, device)
+    
+    # Save models
+    os.makedirs("models", exist_ok=True)
+    torch.save(netG.state_dict(), "models/gan_generator.pth")
+    torch.save(netD.state_dict(), "models/gan_discriminator.pth")
+    
+    # Calculate final metrics
+    final_fid, final_originality = evaluate_model(netG, fixed_noise, train_dataset, device)
+    
+    # Calculate CLIP score with Pokemon-related text prompt
+    print("Calculating CLIP score...")
+    with torch.no_grad():
+        final_fake_images = netG(fixed_noise).detach().cpu()
+    final_clip_score = calculate_clip_score(final_fake_images, "a pokemon character", device)
+    print(f"Final CLIP Score: {final_clip_score:.4f}")
+    
+    # Save metrics
+    os.makedirs("metrics", exist_ok=True)
+    metrics = {
+        "final_fid": f"{final_fid:.4f}",
+        "final_originality": f"{final_originality:.4f}",
+        "final_clip_score": f"{final_clip_score:.4f}",
+        "final_loss_G": f"{G_losses[-1]:.4f}" if G_losses else 0,
+        "final_loss_D": f"{D_losses[-1]:.4f}" if D_losses else 0,
+        "num_epochs": num_epochs
+    }
+    
+    with open("metrics/gan_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+    
+    wandb.log({
+        "final_fid": final_fid,
+        "final_originality": final_originality,
+        "final_clip_score": final_clip_score
+    })
+    
     print("Training complete.")
+    print(f"Final FID: {final_fid:.4f}")
+    print(f"Final Originality: {final_originality:.4f}")
+    print(f"Final CLIP Score: {final_clip_score:.4f}")
 
 
 def main():

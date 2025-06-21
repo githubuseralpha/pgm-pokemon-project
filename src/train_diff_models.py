@@ -11,6 +11,7 @@ import torchvision.utils as vutils
 import wandb
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import json
 
 from unified_metrics import calculate_clip_score, calculate_fid_diffusion
 from dataset import PokemonDatasetLoader
@@ -162,6 +163,20 @@ def main():
         "clip_score_ddpm": clip_score_ddpm,
         "clip_score_ddim": clip_score_ddim,
     })
+    
+    # Save metrics for DVC
+    os.makedirs("metrics", exist_ok=True)
+    metrics = {
+        "fid_ddpm": fid_ddpm,
+        "fid_ddim": fid_ddim,
+        "clip_score_ddpm": clip_score_ddpm,
+        "clip_score_ddim": clip_score_ddim,
+        "final_loss": loss_history[-1] if loss_history else 0,
+        "num_epochs": config.get("epochs", 50)
+    }
+    
+    with open("metrics/diffusion_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
     
     out_dir = config.get("output_dir", "output_diffusion")
     os.makedirs(out_dir, exist_ok=True)
