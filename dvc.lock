@@ -38,8 +38,8 @@ stages:
       nfiles: 250
     - path: params.yaml
       hash: md5
-      md5: f655ffbe03d9075eb6580a17a9903605
-      size: 1255
+      md5: d960da2b9a8737a480ae1f8d7235f893
+      size: 1258
     - path: src/gan_dataset.py
       hash: md5
       md5: bc07ee8352c6ab44a9dbbae91a16cc77
@@ -50,8 +50,8 @@ stages:
       size: 2939
     - path: src/train_gan.py
       hash: md5
-      md5: 92c340611ef72fe31313cbea3be573e4
-      size: 10274
+      md5: 19d3b6b24aa7e3e25edc364cf65822d7
+      size: 10257
     - path: src/unified_metrics.py
       hash: md5
       md5: 7c5b7e7bc6bb9b8c793a25e2cf6ad5db
@@ -66,25 +66,25 @@ stages:
           nz: 100
           ngf: 128
           ndf: 64
-          num_epochs: 5
+          num_epochs: 250
           lr: 0.0002
           beta1: 0.5
           wandb_project: pokemon-gan
           wandb_run_name: gan-training
           seed: 42
     outs:
-    - path: metrics/gan_metrics.json
-      hash: md5
-      md5: dc8de84db24320bfe59cf843a94ac4d3
-      size: 168
     - path: models/gan_discriminator.pth
       hash: md5
-      md5: 85917ca832df21d47b43c04e46673022
+      md5: 837de5a7577a6b113637a0967922e7c5
       size: 11204276
     - path: models/gan_generator.pth
       hash: md5
-      md5: fc95aeb37b1a43b3545ec10da2537bdb
+      md5: a779e9d84d9ecdcad655d769fe983fea
       size: 51710155
+    - path: results/gan_metrics.json
+      hash: md5
+      md5: 915f3f535b38a463615f7cabfa220e66
+      size: 170
   train_diffusion:
     cmd: python src/train_diff_models.py --dataroot data/images --config params.yaml
     deps:
@@ -100,8 +100,8 @@ stages:
       nfiles: 250
     - path: params.yaml
       hash: md5
-      md5: f655ffbe03d9075eb6580a17a9903605
-      size: 1255
+      md5: d960da2b9a8737a480ae1f8d7235f893
+      size: 1258
     - path: src/dataset.py
       hash: md5
       md5: 4c25246177058b2bacb0f2d5ced60da0
@@ -112,7 +112,7 @@ stages:
       size: 18695
     - path: src/train_diff_models.py
       hash: md5
-      md5: d5fb90eb42b73f369f9330a38825655a
+      md5: 710c1fc00ac6c065fb6574be65bc344f
       size: 8887
     - path: src/unified_metrics.py
       hash: md5
@@ -125,9 +125,9 @@ stages:
     params:
       params.yaml:
         diffusion:
-          batch_size: 8
+          batch_size: 16
           num_workers: 6
-          epochs: 1
+          epochs: 50
           lr: 0.0001
           num_timesteps: 1000
           image_size: 128
@@ -152,15 +152,45 @@ stages:
     outs:
     - path: checkpoints_diffusion/
       hash: md5
-      md5: 3e298b17d2f20444d08691d9ac48ae01.dir
-      size: 960316886
-      nfiles: 1
-    - path: metrics/diffusion_metrics.json
-      hash: md5
-      md5: 2dc72e6def44bdc750065d106df342f0
-      size: 197
+      md5: fe5c18a7c20a512848cea9f529436044.dir
+      size: 5761909876
+      nfiles: 6
     - path: output_diffusion/
       hash: md5
-      md5: fd9da9a26562605a610e4e22e5372b1e.dir
-      size: 10879626
+      md5: cc1c23fec0d5e92ea22f20b9260fc05c.dir
+      size: 9188467
       nfiles: 98
+    - path: results/diffusion_metrics.json
+      hash: md5
+      md5: ee463f87fb1acfdb35a929b46f683056
+      size: 195
+  evaluate_models:
+    cmd: python src/evaluate_model.py --gan-model models/gan_generator.pth --diffusion-model
+      checkpoints_diffusion/best_model.pt --config params.yaml
+    deps:
+    - path: checkpoints_diffusion/best_model.pt
+      hash: md5
+      md5: e7c9812087ec863029a4b663b1138149
+      size: 960316886
+    - path: data/images/test
+      hash: md5
+      md5: 057c8c400e565ea232e27294202c9373.dir
+      size: 6226864
+      nfiles: 251
+    - path: models/gan_generator.pth
+      hash: md5
+      md5: a779e9d84d9ecdcad655d769fe983fea
+      size: 51710155
+    - path: params.yaml
+      hash: md5
+      md5: d960da2b9a8737a480ae1f8d7235f893
+      size: 1258
+    - path: src/evaluate_model.py
+      hash: md5
+      md5: 79ed792b26fcede58765b6e2fa95fb0e
+      size: 7438
+    outs:
+    - path: results/comparison_metrics.json
+      hash: md5
+      md5: ec54e4e24095897b30a3b914d9f66ba9
+      size: 304

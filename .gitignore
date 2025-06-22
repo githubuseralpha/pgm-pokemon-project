@@ -109,3 +109,5 @@ temp/
 tmp/
 
 .dvc/
+/checkpoints_diffusion
+/output_diffusion

@@ -1,0 +1,5 @@
+To reproduce results run:
+
+    docker build -t pokemon-gen .
+    docker run -it --rm -v $(pwd):/workspace pokemon-gen dvc init
+    docker run -it --rm -v $(pwd):/workspace pokemon-gen dvc repro

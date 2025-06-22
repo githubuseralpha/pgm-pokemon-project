@@ -198,7 +198,7 @@ def main():
     })
     
     # Save metrics for DVC
-    os.makedirs("metrics", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
     metrics = {
         "fid_ddpm": fid_ddpm,
         "fid_ddim": fid_ddim,
@@ -208,7 +208,7 @@ def main():
         "num_epochs": config.get("epochs", 50)
     }
     
-    with open("metrics/diffusion_metrics.json", "w") as f:
+    with open("results/diffusion_metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
     
     out_dir = config.get("output_dir", "output_diffusion")

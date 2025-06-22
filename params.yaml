@@ -7,7 +7,7 @@ gan:
   nz: 100  # Size of z latent vector
   ngf: 128  # Size of feature maps in generator
   ndf: 64  # Size of feature maps in discriminator
-  num_epochs: 5
+  num_epochs: 250
   lr: 0.0002
   beta1: 0.5
   
@@ -20,9 +20,9 @@ gan:
 
 diffusion:
   # Training parameters
-  batch_size: 8
+  batch_size: 16
   num_workers: 6
-  epochs: 1
+  epochs: 50
   lr: 0.0001
   num_timesteps: 1000
   image_size: 128
@@ -58,7 +58,7 @@ data:
   seed: 42
   
 evaluation:
-  sample_size: 1000
+  sample_size: 100
   batch_size: 8
   text_prompt: "Image of a Pokemon character"
 

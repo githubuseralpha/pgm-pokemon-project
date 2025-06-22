@@ -25,7 +25,7 @@ stages:
       - models/gan_generator.pth
       - models/gan_discriminator.pth
     metrics:
-      - metrics/gan_metrics.json
+      - results/gan_metrics.json
     desc: "Train GAN model on Pokemon images"
 
   train_diffusion:
@@ -45,7 +45,7 @@ stages:
       - checkpoints_diffusion/
       - output_diffusion/
     metrics:
-      - metrics/diffusion_metrics.json
+      - results/diffusion_metrics.json
     desc: "Train diffusion model (DDPM/DDIM) on Pokemon images"
 
   evaluate_models:
@@ -57,5 +57,5 @@ stages:
       - data/images/test
       - params.yaml
     metrics:
-      - metrics/comparison_metrics.json
+      - results/comparison_metrics.json
     desc: "Evaluate and compare GAN vs Diffusion models"

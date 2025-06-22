@@ -44,16 +44,17 @@ def load_config(config_path):
     return config
 
 
-def evaluate_model(netG, fixed_noise, dataset, device):
+def evaluate_model(netG, noise, dataset, device):
     netG.eval()
     batch_size = 32
-    batches = [fixed_noise[i:i + batch_size] for i in range(0, len(fixed_noise), batch_size)]
+    batches = [noise[i:i + batch_size] for i in range(0, len(noise), batch_size)]
     fake_images = []
     for batch in batches:
         with torch.no_grad():
             fake_batch = netG(batch.to(device)).detach().cpu()
             fake_images.append(fake_batch)
     fake_images = torch.cat(fake_images, dim=0)
+    breakpoint()
 
     print(f"Generated {fake_images.shape[0]} fake images.")
     # Calculate FID
@@ -258,7 +259,7 @@ def train(
         vutils.save_image(fake, f"output/fake_samples_epoch_{epoch}.png", normalize=True)
         
         # Evaluate on validation set every 10 epochs
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 100 == 0:
             noise_val = torch.randn(len(val_dataset), nz, 1, 1, device=device)
             val_fid, val_originality = evaluate_model(netG, noise_val, val_dataset, device)
             print(f"Validation - FID: {val_fid:.4f}, Originality: {val_originality:.4f}")
@@ -285,7 +286,7 @@ def train(
     print(f"Final CLIP Score: {final_clip_score:.4f}")
     
     # Save metrics
-    os.makedirs("metrics", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
     metrics = {
         "final_fid": f"{final_fid:.4f}",
         "final_originality": f"{final_originality:.4f}",
@@ -295,7 +296,7 @@ def train(
         "num_epochs": num_epochs
     }
     
-    with open("metrics/gan_metrics.json", "w") as f:
+    with open("results/gan_metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
     
     wandb.log({

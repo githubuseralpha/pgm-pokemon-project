@@ -15,7 +15,7 @@ import yaml
 from dataset import PokemonDatasetLoader
 from gan_models import Generator
 from diff_models import LargeConvDenoiserNetwork, GaussianDiffusion, DeterministicGaussianDiffusion
-from unified_metrics import calculate_FID, calculate_clip_score, calculate_fid_diffusion, originality_score
+from unified_metrics import calculate_FID, calculate_clip_score, calculate_fid_diffusion
 
 
 def parse_args():
@@ -97,9 +97,7 @@ def generate_gan_samples(generator, nz, num_samples, batch_size, device):
 
 
 def generate_diffusion_samples(model, sampler, num_samples, batch_size, image_size, device):
-    """Generate samples from diffusion model"""
-    samples = []
-    
+    """Generate samples from diffusion model"""    
     with torch.no_grad():
         noise = torch.randn(num_samples, 3, image_size, image_size, device=device)
         sample = sampler.p_sample_loop(
@@ -129,7 +127,7 @@ def main():
     diff_model, ddpm, ddim = load_diffusion_model(args.diffusion_model, config, device)
     
     # Generate samples
-    print(f"Generating {args.sample_size} samples from each model...")
+    print(f"Generating samples from each model...")
     
     gan_fid_samples = generate_gan_samples(
         gan_generator, nz, 250, args.batch_size, device
@@ -153,25 +151,21 @@ def main():
     # FID scores
     gan_fid = calculate_FID(gan_fid_samples, test_dataset, device, nz)
     ddpm_fid = calculate_fid_diffusion(diff_model, ddpm, test_dataset, timesteps=30, device=device, 
-                                       fid_sample_size=args.sample_size, batch_size=args.batch_size)
+                                       fid_sample_size=250, batch_size=args.batch_size)
     ddim_fid = calculate_fid_diffusion(diff_model, ddim, test_dataset, timesteps=30, device=device,
-                                       fid_sample_size=args.sample_size, batch_size=args.batch_size)
+                                       fid_sample_size=250, batch_size=args.batch_size)
     
     # CLIP scores
     text_prompt = "Image of a Pokemon character"
     gan_clip = calculate_clip_score(gan_samples, text_prompt, device)
     ddpm_clip = calculate_clip_score(ddpm_samples, text_prompt, device)
     ddim_clip = calculate_clip_score(ddim_samples, text_prompt, device)
-    
-    # Originality scores
-    gan_originality = originality_score(gan_generator, test_dataset, device, nz)
-    
+        
     # Compile results
     results = {
         "gan": {
             "fid": float(gan_fid),
             "clip_score": float(gan_clip),
-            "originality": float(gan_originality)
         },
         "ddpm": {
             "fid": float(ddpm_fid),
@@ -188,15 +182,15 @@ def main():
     }
     
     # Save results
-    os.makedirs("metrics", exist_ok=True)
-    with open("metrics/comparison_metrics.json", "w") as f:
+    os.makedirs("results", exist_ok=True)
+    with open("results/comparison_metrics.json", "w") as f:
         json.dump(results, f, indent=2)
     
     # Print results
     print("\n" + "="*50)
     print("MODEL COMPARISON RESULTS")
     print("="*50)
-    print(f"GAN - FID: {gan_fid:.4f}, CLIP: {gan_clip:.4f}, Originality: {gan_originality:.4f}")
+    print(f"GAN - FID: {gan_fid:.4f}, CLIP: {gan_clip:.4f}")
     print(f"DDPM - FID: {ddpm_fid:.4f}, CLIP: {ddpm_clip:.4f}")
     print(f"DDIM - FID: {ddim_fid:.4f}, CLIP: {ddim_clip:.4f}")
     print("\nBest Models:")
