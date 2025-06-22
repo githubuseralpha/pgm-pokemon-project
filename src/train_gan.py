@@ -54,7 +54,6 @@ def evaluate_model(netG, noise, dataset, device):
             fake_batch = netG(batch.to(device)).detach().cpu()
             fake_images.append(fake_batch)
     fake_images = torch.cat(fake_images, dim=0)
-    breakpoint()
 
     print(f"Generated {fake_images.shape[0]} fake images.")
     # Calculate FID
